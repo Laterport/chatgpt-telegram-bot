@@ -67,11 +67,11 @@ Add allowed users to the `allowed_users` list. You can get your user id by sendi
 Run the bot.
 
 ```bash
-nohup python3 telegram_message_parser.py &
+nohup python3 tg_bot.py &
 ```
 or
 ```bash
-pm2 start telegram_message_parser.py
+pm2 start tg_bot.py
 ```
 > Note: A launch script will be added later.
 
