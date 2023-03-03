@@ -46,13 +46,12 @@ class TelegramMessageParser:
     async def chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         # get message
         message = update.effective_message.text
-        # group chat without @username
-        if update.effective_chat.type == "group" or update.effective_chat.type == "supergroup":
-            if not ("@" + context.bot.username) in message:
+        if update.effective_chat.type in ["group", "supergroup"]:
+            if f"@{context.bot.username}" not in message:
                 return
             else:
                 # remove @username
-                message = message.replace("@" + context.bot.username, "")
+                message = message.replace(f"@{context.bot.username}", "")
 
         # check if user is allowed to use this bot
         if not self.check_user_allowed(str(update.effective_user.id)):
@@ -67,7 +66,8 @@ class TelegramMessageParser:
             action="typing"
         )
         # send message to openai
-        response = self.message_manager.get_response(str(update.effective_chat.id), str(update.effective_user.id), message)
+        response = self.message_manager.get_response(str(update.effective_chat.id), str(update.effective_user.id),
+            message)
         # reply response to user
         # await context.bot.send_message(
         #     chat_id=update.effective_chat.id,
@@ -80,11 +80,14 @@ class TelegramMessageParser:
         # get message
         message = update.effective_message.text
         # group chat without @username
-        if (update.effective_chat.type == "group" or update.effective_chat.type == "supergroup") and not ("@" + context.bot.username) in message:
+        if (
+                update.effective_chat.type in ["group", "supergroup"]
+                and f"@{context.bot.username}" not in message
+        ):
             return
         # remove @username
-        if (not message is None) and "@" + context.bot.username in message:
-            message = message.replace("@" + context.bot.username, "")
+        if message is not None and f"@{context.bot.username}" in message:
+            message = message.replace(f"@{context.bot.username}", "")
         # check if user is allowed to use this bot
         if not self.check_user_allowed(str(update.effective_user.id)):
             await context.bot.send_message(
@@ -93,9 +96,9 @@ class TelegramMessageParser:
             )
             return
         await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, I can't handle files and photos yet."
-            )
+            chat_id=update.effective_chat.id,
+            text="Sorry, I can't handle files and photos yet."
+        )
 
     # start command
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -111,14 +114,14 @@ class TelegramMessageParser:
             chat_id=update.effective_chat.id,
             text="Context cleared."
         )
-    
+
     # get user id command
     async def get_user_id(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=str(update.effective_user.id)
         )
-    
+
     # unknown command
     async def unknown(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
@@ -130,13 +133,8 @@ class TelegramMessageParser:
     def check_user_allowed(self, userid):
         with open("config.json") as f:
             config_dict = json.load(f)
-            if userid in config_dict["allowed_users"]:
-                return True
-            else:
-                return False
+            return userid in config_dict["allowed_users"]
 
-if __name__ == "__main__":
+
+if __name__=="__main__":
     TelegramMessageParser()
-    
-
-
