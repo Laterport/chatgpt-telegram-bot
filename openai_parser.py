@@ -15,8 +15,8 @@ __status__ = Dev
 import openai, json, os
 import datetime
 
-class OpenAIParser:
 
+class OpenAIParser:
     config_dict = {}
 
     def __init__(self):
@@ -28,23 +28,23 @@ class OpenAIParser:
         openai.api_key = self.config_dict["openai_api_key"]
 
     def _get_single_response(self, message):
-        response = openai.ChatCompletion.create(model = "gpt-3.5-turbo-0301",
-                                            messages = [
-                                                {"role": "system", "content": "You are a helpful assistant"},
-                                                {"role": "user", "content": message}
-                                            ])
+        response = openai.ChatCompletion.create(model="gpt-3.5-turbo-0301",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant"},
+                {"role": "user", "content": message}
+            ])
         return response["choices"][0]["message"]["content"]
-    
+
     def get_response(self, userid, context_messages):
         context_messages.insert(0, {"role": "system", "content": "You are a helpful assistant"})
         try:
-            response = openai.ChatCompletion.create(model = "gpt-3.5-turbo-0301",
-                                                messages = context_messages)
+            response = openai.ChatCompletion.create(model="gpt-3.5-turbo-0301",
+                messages=context_messages)
             self.update_usage(response["usage"]["total_tokens"], userid)
             return response["choices"][0]["message"]["content"]
         except Exception as e:
             return str(e) + "\nSorry, I am not feeling well. Please try again."
-    
+
     def update_usage(self, total_tokens, userid):
         # get time
         usage_file_name = datetime.datetime.now().strftime("%Y%m") + "_usage.json"
@@ -53,8 +53,8 @@ class OpenAIParser:
         if not os.path.exists("./usage"):
             os.makedirs("./usage")
         # load usage or create new
-        if os.path.exists("./usage/" + usage_file_name):
-            with open("./usage/" + usage_file_name) as f:
+        if os.path.exists(f"./usage/{usage_file_name}"):
+            with open(f"./usage/{usage_file_name}") as f:
                 self.usage_dict = json.load(f)
         else:
             self.usage_dict = {}
@@ -66,10 +66,11 @@ class OpenAIParser:
         self.usage_dict[now][userid]["tokens"] += total_tokens
         self.usage_dict[now][userid]["requests"] += 1
         # save usage
-        with open("./usage/" + usage_file_name, "w") as f:
+        with open(f"./usage/{usage_file_name}", "w") as f:
             json.dump(self.usage_dict, f)
 
-if __name__ == "__main__":
+
+if __name__=="__main__":
     openai_parser = OpenAIParser()
     # print(openai_parser._get_single_response("Tell me a joke."))
     print(openai_parser.get_response("123", [{"role": "user", "content": "Tell me a joke."}]))

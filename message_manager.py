@@ -32,6 +32,5 @@ class MessageManager:
             print(e)
             
     def __sendMessage(self, user, messageList):
-        ans = self.openai_parser.get_response(user, messageList)
-        return ans
+        return self.openai_parser.get_response(user, messageList)
     
