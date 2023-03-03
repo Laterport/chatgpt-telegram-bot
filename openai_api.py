@@ -15,9 +15,7 @@ class ChatGPT:
 
     def get_response(self, user_id, chat_messages, update_usage=True):
         try:
-            response = openai.ChatCompletion.create(
-                model=self.MODEL_NAME,
-                messages=[self.BEHAVIOUR].extend(chat_messages)
+            response = openai.ChatCompletion.create(model = self.MODEL_NAME, messages = [self.BEHAVIOUR] + chat_messages
             )
             if update_usage:
                 self.__usage.update(user_id, response["usage"]["total_tokens"])
