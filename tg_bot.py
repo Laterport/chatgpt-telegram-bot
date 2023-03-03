@@ -39,7 +39,7 @@ class TelegramBot:
         msg = update.effective_message
         if update.effective_chat.type in ["group", "supergroup"]:
             isReplyToBot = msg.reply_to_message and msg.reply_to_message.from_user.id == context.bot.id
-            isAddressedToBot = isReplyToBot or ("@" +context.bot.username) in msg.text
+            isAddressedToBot = isReplyToBot or f"@{context.bot.username}" in msg.text
             if not isAddressedToBot:
                 return
 
@@ -62,22 +62,19 @@ class TelegramBot:
     async def chat_file(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         # get message
         message = update.effective_message.text
+        if message is None:
+            return
         # group chat without @username
-        if (
-                update.effective_chat.type in ["group", "supergroup"]
-                and f"@{context.bot.username}" not in message
-        ):
+        if (update.effective_chat.type in ["group", "supergroup"] and f"@{context.bot.username}" not in message):
             return
         # check if user is allowed to use this bot
         if not self.check_user_allowed(str(update.effective_user.id)):
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
+            await context.bot.send_message(chat_id = update.effective_chat.id,
+                text = "Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
             )
             return
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Sorry, I can't handle files and photos yet."
+        await context.bot.send_message(chat_id = update.effective_chat.id,
+            text = "Sorry, I can't handle files and photos yet."
         )
 
     # start command
