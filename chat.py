@@ -15,7 +15,7 @@ class Chat:
     def history(self):
         return self.__messages
 
-    def add_message(self, now, message, source):
+    def add_message(self, message, source):
         now = time.time()
         # if last conversation ended more than __wait_time ago (default: 300s), forget it
         if (source == "user") and (now - self.__last_updated > self.__wait_time):
