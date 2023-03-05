@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """TelegramMessageParser
-
 Enter description of this module
-
 __author__ = Zhiquan Wang
 __copyright__ = Copyright 2022
 __version__ = 1.0
@@ -11,27 +9,21 @@ __maintainer__ = Zhiquan Wang
 __email__ = i@flynnoct.com
 __status__ = Dev
 """
-
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import json
-from message_manager import MessageManager
+from chatbot import ChatBot
 
-
-class TelegramMessageParser:
+class TelegramBot:
     def __init__(self):
-        # load config
         with open("config.json") as f:
-            config_dict = json.load(f)
-        # init bot
-        self.bot = ApplicationBuilder().token(config_dict["telegram_bot_token"]).build()
-        # add handlers
+            config = json.load(f)
+            self.__allowed_users = config["allowed_users"]
+            self.bot = ApplicationBuilder().token(config["telegram_bot_token"]).build()
         self.add_handlers()
+        self.__chat_bot = ChatBot()
 
-        # init MessageManager
-        self.message_manager = MessageManager()
-
-        # start bot
+        # start
         self.bot.run_polling()
 
     def add_handlers(self):
@@ -44,14 +36,12 @@ class TelegramMessageParser:
 
     # chat messages
     async def chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        # get message
-        message = update.effective_message.text
+        msg = update.effective_message
         if update.effective_chat.type in ["group", "supergroup"]:
-            if f"@{context.bot.username}" not in message:
+            isReplyToBot = msg.reply_to_message and msg.reply_to_message.from_user.id == context.bot.id
+            isAddressedToBot = isReplyToBot or f"@{context.bot.username}" in msg.text
+            if not isAddressedToBot:
                 return
-            else:
-                # remove @username
-                message = message.replace(f"@{context.bot.username}", "")
 
         # check if user is allowed to use this bot
         if not self.check_user_allowed(str(update.effective_user.id)):
@@ -60,44 +50,31 @@ class TelegramMessageParser:
                 text="Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
             )
             return
-        # sending typing action
-        await context.bot.send_chat_action(
-            chat_id=update.effective_chat.id,
-            action="typing"
-        )
+
+        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+        # remove bot @username from message
+        msg_text = msg.text.replace(f"@{context.bot.username}", "")
         # send message to openai
-        response = self.message_manager.get_response(str(update.effective_chat.id), str(update.effective_user.id),
-            message)
-        # reply response to user
-        # await context.bot.send_message(
-        #     chat_id=update.effective_chat.id,
-        #     text=response
-        # )
-        await update.message.reply_text(response)
+        response = self.__chat_bot.talk(update.effective_chat.id, update.effective_user.id, msg_text)
+        await update.message.reply_text(response) # send bot response to user
 
     # file and photo messages
     async def chat_file(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         # get message
         message = update.effective_message.text
-        # group chat without @username
-        if (
-                update.effective_chat.type in ["group", "supergroup"]
-                and f"@{context.bot.username}" not in message
-        ):
+        if message is None:
             return
-        # remove @username
-        if message is not None and f"@{context.bot.username}" in message:
-            message = message.replace(f"@{context.bot.username}", "")
+        # group chat without @username
+        if (update.effective_chat.type in ["group", "supergroup"] and f"@{context.bot.username}" not in message):
+            return
         # check if user is allowed to use this bot
         if not self.check_user_allowed(str(update.effective_user.id)):
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
+            await context.bot.send_message(chat_id = update.effective_chat.id,
+                text = "Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
             )
             return
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Sorry, I can't handle files and photos yet."
+        await context.bot.send_message(chat_id = update.effective_chat.id,
+            text = "Sorry, I can't handle files and photos yet."
         )
 
     # start command
@@ -109,18 +86,11 @@ class TelegramMessageParser:
 
     # clear context command
     async def clear_context(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        self.message_manager.clear_context(str(update.effective_chat.id))
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Context cleared."
-        )
+        self.__chat_bot.clear(update.effective_chat.id)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Context cleared.")
 
-    # get user id command
     async def get_user_id(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=str(update.effective_user.id)
-        )
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=str(update.effective_user.id))
 
     # unknown command
     async def unknown(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -130,11 +100,9 @@ class TelegramMessageParser:
         )
 
     # check if user is allowed to use this bot, add user to "allowed_users" in config.json
-    def check_user_allowed(self, userid):
-        with open("config.json") as f:
-            config_dict = json.load(f)
-            return userid in config_dict["allowed_users"]
+    def check_user_allowed(self, user_id):
+        return user_id in self.__allowed_users
 
 
 if __name__=="__main__":
-    TelegramMessageParser()
+    TelegramBot()
