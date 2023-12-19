@@ -40,6 +40,7 @@ class TelegramBot:
             )
             return
 
+
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
         # remove bot @username from message
         msg_text = msg.text.replace(f"@{context.bot.username}", "")
