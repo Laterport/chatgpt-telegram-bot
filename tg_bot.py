@@ -1,14 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-"""TelegramMessageParser
-Enter description of this module
-__author__ = Zhiquan Wang
-__copyright__ = Copyright 2022
-__version__ = 1.0
-__maintainer__ = Zhiquan Wang
-__email__ = i@flynnoct.com
-__status__ = Dev
-"""
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import json
