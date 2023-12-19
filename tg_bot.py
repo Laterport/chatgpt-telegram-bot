@@ -1,14 +1,3 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-"""TelegramMessageParser
-Enter description of this module
-__author__ = Zhiquan Wang
-__copyright__ = Copyright 2022
-__version__ = 1.0
-__maintainer__ = Zhiquan Wang
-__email__ = i@flynnoct.com
-__status__ = Dev
-"""
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import json
@@ -50,6 +39,7 @@ class TelegramBot:
                 text="Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
             )
             return
+
 
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
         # remove bot @username from message
