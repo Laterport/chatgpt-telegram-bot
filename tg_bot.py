@@ -11,7 +11,7 @@ __status__ = Dev
 """
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-import json, random
+import json, random, re
 from chatbot import ChatBot
 
 class TelegramBot:
@@ -58,12 +58,12 @@ class TelegramBot:
 
         # If not explicitly mentioned, check if the message contains any keywords
         with open('all_unique_words.txt', 'r', encoding='utf-8') as file:
-            keywords = [line.strip().lower() for line in file.readlines()]
+            patterns = [re.compile(line.strip(), re.IGNORECASE) for line in file.readlines()]
 
         lower_text = msg.text.lower()
 
-        # Check if any keyword is present in the message
-        if any(keyword in lower_text for keyword in keywords):
+        # Проверьте, есть ли какое-либо ключевое слово в сообщении
+        if any(pattern.search(lower_text) for pattern in patterns):
             await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
             msg_text = msg.text.replace(f"@{context.bot.username}", "")
 
