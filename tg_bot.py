@@ -1,18 +1,11 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-"""TelegramMessageParser
-Enter description of this module
-__author__ = Zhiquan Wang
-__copyright__ = Copyright 2022
-__version__ = 1.0
-__maintainer__ = Zhiquan Wang
-__email__ = i@flynnoct.com
-__status__ = Dev
-"""
+import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-import json, random, re
+import json, random, re, sys
 from chatbot import ChatBot
+
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class TelegramBot:
     def __init__(self):
@@ -34,30 +27,54 @@ class TelegramBot:
         self.bot.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.chat))
         self.bot.add_handler(MessageHandler(filters.COMMAND, self.unknown))
 
-
     async def chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = update.effective_message
 
-        # Check if the message is a reply to the bot
-        if msg.reply_to_message and msg.reply_to_message.from_user.id==context.bot.id:
-            # The message is a reply to the bot, respond to the message
-            await context.bot.send_chat_action(chat_id=msg.chat.id, action="typing")
+        if not self.check_user_allowed(str(update.effective_user.id)):
+            await context.bot.send_message(chat_id = update.effective_chat.id,
+                text = "Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
+            )
+            return
 
-            # Check if the user is allowed to use the bot
-            if not self.check_user_allowed(str(update.effective_user.id)):
-                await context.bot.send_message(
-                    chat_id=msg.chat.id,
-                    text="Sorry, you are not allowed to use this bot. Contact the bot owner for more information."
-                )
-                return
+        # Check if the message is a reply to the bot in private messages
+        if msg.reply_to_message and msg.reply_to_message.from_user.id == context.bot.id:
+            # The message is a reply to the bot in a private chat, respond to the message
+            await context.bot.send_chat_action(chat_id=msg.chat.id, action="typing")
 
             # Directly pass the user's reply to OpenAI for processing
             response = self.__chat_bot.talk(msg.chat.id, update.effective_user.id, msg.text)
             await msg.reply_text(response)
             return  # Exit the function to avoid further processing
 
+        # If not explicitly mentioned, check if the message is in private chat
+        if msg.chat.type == "private":
+            await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+
+            # Directly pass the user's message to OpenAI for processing
+            response = self.__chat_bot.talk(update.effective_chat.id, update.effective_user.id, msg.text)
+
+            # Respond with the OpenAI-generated response
+            await msg.reply_text(response)
+
+            # If the message is not in private chat, do not respond
+            return
+
+            # If in a group chat and user is allowed
+        if msg.chat.type == "supergroup" and context.bot.username in msg.text.lower():
+            # Extract user's direct message
+            direct_message = msg.text.split(context.bot.username)[1].strip()
+
+            # Process the user's direct message using OpenAI
+            response = self.__chat_bot.talk(update.effective_chat.id, update.effective_user.id, direct_message)
+
+            # Respond with the OpenAI-generated response
+            await context.bot.send_chat_action(chat_id=update.effective_chat.id,
+                                               action="typing")  # Add typing status here
+            await msg.reply_text(response)
+            return  # Exit the function to avoid further processing
+
         # If not explicitly mentioned, check if the message contains any keywords
-        with open('all_unique_words.txt', 'r', encoding='utf-8') as file:
+        with open('DICT.txt', 'r', encoding='utf-8') as file:
             patterns = [re.compile(line.strip(), re.IGNORECASE) for line in file.readlines()]
 
         lower_text = msg.text.lower()
@@ -69,17 +86,19 @@ class TelegramBot:
 
             # Randomly select a phrase template
             phrase_templates = [
-                "Не задачай лишних вопросов, а просто расскажи мне про {word}",
-                "Не задачай лишних вопросов, а просто скажи, ты думаешь про {word}",
-                "Не задачай лишних вопросов, а просто поведай историю про {word}",
-                "Не задачай лишних вопросов, а просто расскажи анекдот про {word}",
-                "Не задачай лишних вопросов, а просто сочини стих про {word}",
+                "Не задавай лишних вопросов, а просто сочини стих про {word}",
                 "Не задачай лишних вопросов, а просто придумай афоризм про {word}",
-                "Не мучь свой мозг вопросами, а просто расскажи интересный факт о {word}.",
-                "Не заморачивайся вопросами, а поделись своими впечатлениями от {word}.",
-                "Забудь про вопросы, а расскажи, как ты относишься к {word}.",
-                "Не усложняй, просто расскажи свою любимую историю, связанную с {word}.",
-                "Не гони вопросы, а расскажи, что приходит тебе в голову, когда слышишь {word}."
+                "Не мудри, а напиши краткую рассказ-миниатюру на тему {word}",
+                "Не томи вопросами, а создай эпиграмму о {word}",
+                "Не путай, а выдумай короткую историю с персонажем по имени {word}",
+                "Не тяни, а составь диалог между двумя вымышленными персонажами, обсуждающими {word}",
+                "Не заморачивайся, а напиши кроссворд с ключевым словом {word}",
+                "Не спрашивай, а разверни идею в кратком сценарии, где главный момент связан с {word}",
+                "Не гадай, а составь краткое описание загадочного предмета с именем {word}",
+                "Не разглагольствуй, а напиши короткую сказку, в которой {word} играет важную роль",
+                "Не тягай за ниточки, а создай короткую поэму с {word} в качестве основной темы",
+                "Не мешкай, а напиши юмористический монолог на тему {word}",
+                "Не затягивай, а придумай короткую пародию на известный текст с участием {word}"
             ]
 
             random_template = random.choice(phrase_templates)
@@ -96,7 +115,6 @@ class TelegramBot:
 
         # If no explicit mention or keyword is found, do not respond to general chat messages
         return
-
 
     # file and photo messages
     async def chat_file(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
