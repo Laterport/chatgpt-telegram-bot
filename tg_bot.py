@@ -38,9 +38,9 @@ class TelegramBot:
     async def chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = update.effective_message
 
-        # Check if the message is an explicit mention to the bot
-        if f"@{context.bot.username}" in msg.text or msg.chat.type=="private":
-            # Bot is explicitly mentioned or it's a private chat, respond to the message
+        # Check if the message is a reply to the bot
+        if msg.reply_to_message and msg.reply_to_message.from_user.id==context.bot.id:
+            # The message is a reply to the bot, respond to the message
             await context.bot.send_chat_action(chat_id=msg.chat.id, action="typing")
 
             # Check if the user is allowed to use the bot
@@ -51,7 +51,7 @@ class TelegramBot:
                 )
                 return
 
-            # Directly pass the user's message to OpenAI for processing
+            # Directly pass the user's reply to OpenAI for processing
             response = self.__chat_bot.talk(msg.chat.id, update.effective_user.id, msg.text)
             await msg.reply_text(response)
             return  # Exit the function to avoid further processing
