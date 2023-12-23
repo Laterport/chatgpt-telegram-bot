@@ -52,6 +52,7 @@ class TelegramBot:
 
             # Process the user's reply to the bot
             response = self.__chat_bot.talk(msg.chat.id, update.effective_user.id, msg.text)
+            logging.info(f'Request: {msg.text}, Response: {response}')
             await msg.reply_text(response)
             return
 
