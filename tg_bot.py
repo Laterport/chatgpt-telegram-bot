@@ -64,7 +64,7 @@ class TelegramBot:
             lower_text = msg.text.lower()
 
             # Check if any whole word from DICT is present in the message
-            if any(word in lower_text.split() for word in dictionary_words):
+            if any(word == msg_word for word in dictionary_words for msg_word in lower_text.split()):
                 await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
 
                 # Replace mentions using regular expression
