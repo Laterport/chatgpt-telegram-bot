@@ -59,12 +59,15 @@ class TelegramBot:
         # Check for group/supergroup messages
         if update.effective_chat.type in ["group", "supergroup"]:
             with open('DICT.txt', 'r', encoding='utf-8') as file:
-                dictionary_words = [line.strip().lower() for line in file.readlines()]
+                dictionary_words = {line.strip().upper() for line in file.readlines()}
 
-            lower_text = msg.text.lower()
+            upper_text = msg.text.upper()
 
-            # Check if any whole word from DICT is present in the message
-            if any(word == msg_word for word in dictionary_words for msg_word in lower_text.split()):
+            # Check if any whole word from DICT is present in the message and the word has at least 5 characters
+            if (
+            detected_word := next((word for word in upper_text.split() if word in dictionary_words and len(word) >= 5),
+                                  None)):
+                print(f"Bot detected the word: {detected_word}")
                 await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
 
                 # Replace mentions using regular expression
