@@ -67,7 +67,7 @@ class TelegramBot:
             if (
             detected_word := next((word for word in upper_text.split() if word in dictionary_words and len(word) >= 5),
                                   None)):
-                print(f"Bot detected the word: {detected_word}")
+                logging.info(f"Bot detected the word: {detected_word}")
                 await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
 
                 # Replace mentions using regular expression
