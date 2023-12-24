@@ -6,7 +6,7 @@ from usage import UsageStats
 
 class ChatGPT:
     ENDPOINT = "https://neuroapi.host/v1"  # Обновите с вашим адресом сервера
-    MODEL_NAME = "gpt-3.5-turbo-1106"
+    MODEL_NAME = "gpt-4-1106-preview"
     BEHAVIOUR = {"role": "system", "content": "You are a helpful assistant"}
 
     def __init__(self, api_key):
