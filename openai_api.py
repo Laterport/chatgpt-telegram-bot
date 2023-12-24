@@ -14,7 +14,7 @@ class ChatGPT:
         self.__usage = UsageStats()
         self.logger = logging.getLogger(__name__)  # Создаем логгер
 
-    @retry(delay=10, backoff=1, max_delay=10, tries=10)
+    @retry(tries=3, delay=3, backoff=1, max_delay=3)
     def get_response(self, user_id, chat_messages, update_usage=True):
         try:
             headers = {
