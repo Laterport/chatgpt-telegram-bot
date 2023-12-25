@@ -38,12 +38,15 @@ class ChatGPT:
             if response.status_code != 200:
                 raise Exception(f"Request failed with status code: {response.status_code}")
 
+            # Store the response content in a variable
+            response_content = b""
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
+                    response_content += chunk
                     # Process the chunk as needed
                     print(chunk.decode("utf-8"))
 
-            response_data = json.loads(response.content)
+            response_data = json.loads(response_content.decode("utf-8"))
             if update_usage:
                 self.__usage.update(user_id, response_data.get("usage", {}).get("total_tokens", 0))
 
